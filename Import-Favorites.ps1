@@ -1,4 +1,4 @@
-﻿function Import-Favorites {
+function Import-Favorites {
 <#
 .Synopsis
     Create a .txt containing your favorite URLs and use this function to import them to IE
@@ -7,9 +7,12 @@
 .EXAMPLE
    Import-Favorites -FilePath "C:\users\rotems\Desktop\UrlList.txt" -FavsFolderName 'News WebSites'
 .INPUTS
-   Inputs to this cmdlet (if any)
+   FilePath = Enter the path to the .txt file as a string
+   FavsFolderName = Enter the name of the favorite folder in your IE browser as a string
 .NOTES
-   The name of the link will be the second 
+   The name of the saved link will be the string after the first . in the url: 
+   https://www.ynet.co.il -> ynet
+
 #>
     [CmdletBinding(SupportsShouldProcess=$true)]
     Param(
@@ -27,7 +30,7 @@
     Begin{
         $IEFav = Join-Path -Path ([Environment]::GetFolderPath('Favorites','None')) -ChildPath $FavsFolderName
         if (-not (Test-Path $IEFav)){
-            New-Item -Path $IEFavPath -ItemType Directory -Force | Out-Null
+            New-Item -Path $IEFav -ItemType Directory -Force | Out-Null
         }
         $Shell = New-Object -ComObject WScript.Shell
         $Urls = Get-Content -Path $FilePath
@@ -35,15 +38,10 @@
     Process{
         foreach ($url in $Urls){
             try{
-                Write-Debug "url: $url"
                 $urlName = $url.split(".")[1]
                 $FullPath = Join-Path -Path $IEFav -ChildPath "$urlName.url"
-                write-host $FullPath
                 $shortcut = $Shell.CreateShortcut($FullPath)
                 $shortcut.TargetPath = $Url
-
-                Write-Debug "shortcut.TargetPath: $($shortcut.TargetPath)"
-
                 $shortcut.Save()
             }
             catch [System.Runtime.InteropServices.COMException] {
@@ -55,8 +53,6 @@
         }
     }
     End{
-        Write-Host "Done... Your new Favorite urls are in the $FavsFolerName Folder"
+        Write-Host "Done... Your new Favorite urls are in the $FavsFolderName IE Folder"
     }
 }
-
-Import-Favorites -FilePath "C:\users\rotems\Desktop\UrlList.txt" -FavsFolderName 
