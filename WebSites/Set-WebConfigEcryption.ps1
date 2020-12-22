@@ -6,11 +6,19 @@
 ##########################################################################################################
 #                                           HOW TO USE                                                   #
 #                                                                                                        #
+#                                                                                                        #
+#   Encrypt appSettings and connectionStrings Sections for all web sites and web applications            #
+#   \.Set-WebConfigEcryption -Sections @("appSettings", "connectionStrings")                             #
+#                                                                                                        #
 #   Encrypt appSettings and connectionStrings Sections                                                   #
 #   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings")                #
 #                                                                                                        #
 #   Encrypt appSettings Section                                                                          #
 #   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings"                                        #
+#                                                                                                        #
+#                                                                                                        #
+#   Decrypt appSettings and connectionStrings Sections for all web sites and web applications            #
+#   \.Set-WebConfigEcryption -Sections @("appSettings", "connectionStrings")                             #
 #                                                                                                        #
 #   Decrypt appSettings and connectionStrings Sections                                                   #
 #   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings") -Decrypt       #
