@@ -1,16 +1,35 @@
-﻿# Notes  : Encrypt-WebConfig
+﻿# Notes  : Set-WebConfigEcryption
 # Date   : 22.12.2020
 # Author : Rotem Simhi
-# Version: 2.0.0.1
+# Version: 2.0.0.2
+
+##########################################################################################################
+#                                           HOW TO USE                                                   #
+#                                                                                                        #
+#   Encrypt appSettings and connectionStrings Sections                                                   #
+#   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings")                #
+#                                                                                                        #
+#   Encrypt appSettings Section                                                                          #
+#   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings"                                        #
+#                                                                                                        #
+#   Decrypt appSettings and connectionStrings Sections                                                   #
+#   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings") -Decrypt       #
+#                                                                                                        #
+#   Decrypt appSettings Section                                                                          #
+#   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings" -Decrypt                               #
+#                                                                                                        #
+##########################################################################################################
 
 # Load params from user
-param($Site = "All", $Sections = @("appSettings", "connectionStrings"))
+param($Site = "All", $Sections = @("appSettings", "connectionStrings"), [boot]$Decrypt = $false)
 Import-Module -name *web*
 
+# Helper Functions
 function Get-Runtimeversion{
     param(
         $applicationPoolVersion
     )
+
     if ($applicationPoolVersion -eq 'v2.0'){
         $runtime = 'v2.0.50727'
     }elseif ($applicationPoolVersion -eq'v4.0') {
@@ -88,7 +107,7 @@ function Set-Encryption  {
             $applicationPoolVersion = $id.Value['applicationPoolVersion']
             
             # Select the runtime version
-            $Runtime =Get-Runtimeversion -applicationPoolVersion $applicationPoolVersion
+            $Runtime = Get-Runtimeversion -applicationPoolVersion $applicationPoolVersion
     
             if ($runtime -eq 'Unknown'){
                 break
@@ -117,7 +136,7 @@ function Set-Encryption  {
                 $applicationPoolVersion = $id.applicationPoolVersion
                 
                 # Select the runtime version
-                $Runtime =Get-Runtimeversion -applicationPoolVersion $applicationPoolVersion
+                $Runtime = Get-Runtimeversion -applicationPoolVersion $applicationPoolVersion
   
                 # Generate the path of the aspnet_regiis according to the runtime version
                 if ($runtime -eq 'Unknown'){
@@ -142,13 +161,13 @@ function Set-Encryption  {
 }
 
 
+if ($Decrypt){
+    # Decrypt
+    Set-Encryption -site $Site -Sections $Sections -Decrypt
+}else{
+    # Encrypt
+    Set-Encryption -site $Site -Sections $Sections 
+}
 
-# Decrypt config sections
-#$Sections = "appSettings", "connectionStrings"
 
-# Encrypt
-Set-Encryption -site $Site -Sections $Sections 
-
-# Decrypt
-Set-Encryption -site $Site -Sections $Sections -Decrypt
 
