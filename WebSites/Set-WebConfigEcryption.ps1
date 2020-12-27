@@ -1,35 +1,35 @@
 ﻿# Notes  : Set-WebConfigEcryption
 # Date   : 22.12.2020
 # Author : Rotem Simhi
-# Version: 2.0.0.2
+# Version: 2.0.0.3
 
 ##########################################################################################################
 #                                           HOW TO USE                                                   #
 #                                                                                                        #
 #                                                                                                        #
 #   Encrypt appSettings and connectionStrings Sections for all web sites and web applications            #
-#   \.Set-WebConfigEcryption -Sections @("appSettings", "connectionStrings")                             #
+#   \.Set-WebConfigEcryption.ps1 -Sections @("appSettings", "connectionStrings")                         #
 #                                                                                                        #
 #   Encrypt appSettings and connectionStrings Sections                                                   #
-#   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings")                #
+#   \.Set-WebConfigEcryption.ps1 -Site "test" -Sections @("appSettings", "connectionStrings")            #
 #                                                                                                        #
 #   Encrypt appSettings Section                                                                          #
-#   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings"                                        #
+#   \.Set-WebConfigEcryption.ps1 -Site "test" -Sections "appSettings"                                    #
 #                                                                                                        #
 #                                                                                                        #
 #   Decrypt appSettings and connectionStrings Sections for all web sites and web applications            #
-#   \.Set-WebConfigEcryption -Sections @("appSettings", "connectionStrings")                             #
+#   \.Set-WebConfigEcryption.ps1 -Sections @("appSettings", "connectionStrings")                         #
 #                                                                                                        #
 #   Decrypt appSettings and connectionStrings Sections                                                   #
-#   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings") -Decrypt       #
+#   \.Set-WebConfigEcryption.ps1 -Site "test" -Sections @("appSettings", "connectionStrings") -Decrypt   #
 #                                                                                                        #
 #   Decrypt appSettings Section                                                                          #
-#   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings" -Decrypt                               #
+#   \.Set-WebConfigEcryption.ps1 -Site "test" -Sections "appSettings" -Decrypt                           #
 #                                                                                                        #
 ##########################################################################################################
 
 # Load params from user
-param($Site = "All", $Sections = @("appSettings", "connectionStrings"), [boot]$Decrypt = $false)
+param($Site = "All", $Sections = @("appSettings", "connectionStrings"), [bool]$Decrypt = $false)
 Import-Module -name *web*
 
 # Helper Functions
@@ -120,7 +120,7 @@ function Set-Encryption  {
             if ($runtime -eq 'Unknown'){
                 break
             }else{
-                $LocationPath = 'C:\Windows\Microsoft.NET\Framework64\{0}' -f ($AppPoolVersion.runtime)
+                $LocationPath = 'C:\Windows\Microsoft.NET\Framework64\{0}' -f ($runtime)
             }
     
             Set-Location $LocationPath
