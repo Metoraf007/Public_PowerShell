@@ -39,18 +39,18 @@ function Get-Runtimeversion{
     )
 
     if ($applicationPoolVersion -eq 'v2.0'){
-        $runtime = 'v2.0.50727'
+        $Runtime = 'v2.0.50727'
     }elseif ($applicationPoolVersion -eq'v4.0') {
-        $runtime = 'v4.0.30319'
+        $Runtime = 'v4.0.30319'
     }else {
-        $runtime = 'Unknown'
+        $Runtime = 'Unknown'
     }
-    return $runtime
+    return $Runtime
 }
 function Get-IISMap {
     $id = 0
     $SiteCollection = @{}
-    $WebSites = Get-Website
+    $WebSites = Get-Website | where-object {$_.bindings.collection.protocol -like "http*"}
 
     # Map each of the websites
     foreach ($webSite in $WebSites){
@@ -58,7 +58,7 @@ function Get-IISMap {
         $WebSitePath = $WebSite.physicalPath
         $applicationPoolName = $WebSite.applicationPool
         $applicationPoolVersion = Get-IISAppPool -Name $applicationPoolName | Select-Object -ExpandProperty ManagedRuntimeVersion
-        
+
         $SiteCollection += @{
             $id = @{
                 Name                   = $WebSiteName
@@ -109,26 +109,29 @@ function Set-Encryption  {
     if ($Site = "All") {
         
         foreach ($id in $SiteMap.GetEnumerator() ){
-            #$Name = $id.Value['Name']
-            $Path = $id.Value['Path']
-            #$applicationPoolName = $id.Value['applicationPoolName']
+            $Name = $id.Value['Name']
+            $SiteLocation = $id.Value['Path']
+            $applicationPoolName = $id.Value['applicationPoolName']
             $applicationPoolVersion = $id.Value['applicationPoolVersion']
             
-            # Select the runtime version
+            # Select the Runtime version
             $Runtime = Get-Runtimeversion -applicationPoolVersion $applicationPoolVersion
     
-            if ($runtime -eq 'Unknown'){
-                break
+            if ($Runtime -eq 'Unknown'){
+                Write-Host "Runtime Unknown" -ForegroundColor Red
+                $LocationPath = 'C:\Windows\Microsoft.NET\Framework64\'
             }else{
-                $LocationPath = 'C:\Windows\Microsoft.NET\Framework64\{0}' -f ($runtime)
+                $LocationPath = 'C:\Windows\Microsoft.NET\Framework64\{0}' -f ($Runtime)
             }
     
             Set-Location $LocationPath
         
             foreach ($Section in $Sections) {
                 if ($Decrypt) {
+                    Write-Host "Decrypting Site: $Name, with AppPool: $applicationPoolName" -ForegroundColor Green
                    .\aspnet_regiis.exe -pdf $Section $SiteLocation
                 }else {
+                    Write-Host "Encrypting Site: $Name, with AppPool: $applicationPoolName" -ForegroundColor Green
                    .\aspnet_regiis.exe -pef $Section $SiteLocation -prov DataProtectionConfigurationProvider
                 }
             }
@@ -138,29 +141,32 @@ function Set-Encryption  {
             $Sites = $id.value | Where-Object name -eq $Site
             foreach ($site in $sites){
 
-                #$Name = $site.Name
-                $Path = $site.Path
-                #$applicationPoolName = $id.applicationPoolName
+                $Name = $site.Name
+                $SiteLocation = $site.Path
+                $applicationPoolName = $id.applicationPoolName
                 $applicationPoolVersion = $id.applicationPoolVersion
                 
-                # Select the runtime version
+                # Select the Runtime version
                 $Runtime = Get-Runtimeversion -applicationPoolVersion $applicationPoolVersion
   
-                # Generate the path of the aspnet_regiis according to the runtime version
-                if ($runtime -eq 'Unknown'){
-                    break
+                # Generate the path of the aspnet_regiis according to the Runtime version
+                if ($Runtime -eq 'Unknown'){
+                    Write-Host "Runtime Unknown" -ForegroundColor Red
+                    $LocationPath = 'C:\Windows\Microsoft.NET\Framework64\'
                 }else{
-                    $LocationPath = 'C:\Windows\Microsoft.NET\Framework64\{0}' -f ($runtime)
+                    $LocationPath = 'C:\Windows\Microsoft.NET\Framework64\{0}' -f ($Runtime)
                 }
         
                 Set-Location $LocationPath
             
                 foreach ($Section in $Sections) {
                     if ($Decrypt) {
-                    .\aspnet_regiis.exe -pdf $Section $Path
+                        Write-Host "Decrypting Site: $Name, with AppPool: $applicationPoolName" -ForegroundColor Green
+                        .\aspnet_regiis.exe -pdf $Section $SiteLocation
                     
                     }else {
-                    .\aspnet_regiis.exe -pef $Section $Path -prov DataProtectionConfigurationProvider
+                        Write-Host "Encrypting Site: $Name, with AppPool: $applicationPoolName" -ForegroundColor Green
+                        .\aspnet_regiis.exe -pef $Section $SiteLocation -prov DataProtectionConfigurationProvider
                     }
                 }
             }
