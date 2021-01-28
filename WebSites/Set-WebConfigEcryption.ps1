@@ -1,35 +1,35 @@
 ﻿# Notes  : Set-WebConfigEcryption
-# Date   : 17.01.2020
+# Date   : 28.01.2021
 # Author : Rotem Simhi
-# Version: 2.0.0.4
+# Version: 2.0.0.5
 
-##########################################################################################################
-#                                           HOW TO USE                                                   #
-#                                                                                                        #
-#                                                                                                        #
-#   Encrypt appSettings and connectionStrings Sections for all web sites and web applications            #
-#   \.Set-WebConfigEcryption -Sections @("appSettings", "connectionStrings")                             #
-#                                                                                                        #
-#   Encrypt appSettings and connectionStrings Sections                                                   #
-#   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings")                #
-#                                                                                                        #
-#   Encrypt appSettings Section                                                                          #
-#   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings"                                        #
-#                                                                                                        #
-#                                                                                                        #
-#   Decrypt appSettings and connectionStrings Sections for all web sites and web applications            #
-#   \.Set-WebConfigEcryption -Sections @("appSettings", "connectionStrings")                             #
-#                                                                                                        #
-#   Decrypt appSettings and connectionStrings Sections                                                   #
-#   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings") -Decrypt       #
-#                                                                                                        #
-#   Decrypt appSettings Section                                                                          #
-#   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings" -Decrypt                               #
-#                                                                                                        #
-##########################################################################################################
+#############################################################################################################
+#                                           HOW TO USE                                                      #
+#                                                                                                           #
+#                                                                                                           #
+#   Encrypt appSettings and connectionStrings Sections for all web sites and web applications               #
+#   \.Set-WebConfigEcryption -Sections @("appSettings", "connectionStrings")                                #
+#                                                                                                           #
+#   Encrypt appSettings and connectionStrings Sections                                                      #
+#   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings")                   #
+#                                                                                                           #
+#   Encrypt appSettings Section                                                                             #
+#   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings"                                           #
+#                                                                                                           #
+#                                                                                                           #
+#   Decrypt appSettings and connectionStrings Sections for all web sites and web applications               #
+#   \.Set-WebConfigEcryption -Sections @("appSettings", "connectionStrings") -Decrypt $Dycrypt              #
+#                                                                                                           #
+#   Decrypt appSettings and connectionStrings Sections                                                      #
+#   \.Set-WebConfigEcryption -Site "test" -Sections @("appSettings", "connectionStrings") -Decrypt $Dycrypt #
+#                                                                                                           #
+#   Decrypt appSettings Section                                                                             #
+#   \.Set-WebConfigEcryption -Site "test" -Sections "appSettings" -Decrypt $Dycrypt                         #
+#                                                                                                           #
+#############################################################################################################
 
 # Load params from user
-param($Site = "All", $Sections = @("appSettings", "connectionStrings"), [bool]$Decrypt = $false)
+param($Site = "All", $Sections = @("appSettings", "connectionStrings"), [bool]$Decrypt = $true)
 Import-Module -name *web*
 
 # Helper Functions
@@ -94,6 +94,20 @@ function Get-IISMap {
     return $SiteCollection
 }
 
+function Backup-Config {
+    param(
+        $SitePath
+    )
+
+    $ConfigPath = '{0}\web.config' -f $SitePath
+    $BackupFolder = 'D:\Backup\{0:yyyy}\{1}' -f (Get-Date), (Split-Path -Leaf $SiteLocation)
+
+    if (-not (Test-Path $BackupFolder)){
+        New-Item $BackupFolder -Force | Out-Null
+    }
+    Copy-Item -Path $ConfigPath -Destination $BackupFolder -Force
+}
+
 # Encrypt/Decrypt configuration files
 function Set-Encryption  {
     param (
@@ -116,7 +130,13 @@ function Set-Encryption  {
             $applicationPoolName = $id.Value['applicationPoolName']
             $applicationPoolVersion = $id.Value['applicationPoolVersion']
             
+            
+
             Write-Host "Working on Site: $Name, AppPool: $applicationPoolName" -ForegroundColor Green
+
+            #Backup Web.Config
+            Write-Host "Backing up web.config from $name"
+            Backup-Config $SiteLocation
 
             # Select the runtime version
             $Runtime = Get-Runtimeversion -applicationPoolVersion $applicationPoolVersion
@@ -132,9 +152,10 @@ function Set-Encryption  {
         
             foreach ($Section in $Sections) {
                 if ($Decrypt) {
+                    Write-Host "Decrypting $Section in Site: $Name, AppPool: $applicationPoolName" -ForegroundColor Green
                    .\aspnet_regiis.exe -pdf $Section $SiteLocation
                 }else {
-                Write-Host "Encrypting $Section in Site: $Name, AppPool: $applicationPoolName" -ForegroundColor Green
+                    Write-Host "Encrypting $Section in Site: $Name, AppPool: $applicationPoolName" -ForegroundColor Green
                    .\aspnet_regiis.exe -pef $Section $SiteLocation -prov DataProtectionConfigurationProvider
                 }
             }
@@ -149,6 +170,11 @@ function Set-Encryption  {
                 $applicationPoolName = $id.applicationPoolName
                 $applicationPoolVersion = $id.applicationPoolVersion
                 
+                
+                #Backup Web.Config
+                Write-Host "Backing up web.config from $name"
+                Backup-Config $SiteLocation
+
                 # Select the runtime version
                 $Runtime = Get-Runtimeversion -applicationPoolVersion $applicationPoolVersion
   
@@ -164,6 +190,7 @@ function Set-Encryption  {
             
                 foreach ($Section in $Sections) {
                     if ($Decrypt) {
+                    Write-Host "Decrypting $Section in Application: $Name, AppPool: $applicationPoolName" -ForegroundColor Green
                     .\aspnet_regiis.exe -pdf $Section $SiteLocation
                     
                     }else {
@@ -176,12 +203,4 @@ function Set-Encryption  {
     }
 }
 
-
-if ($Decrypt){
-    # Decrypt
-    Set-Encryption -site $Site -Sections $Sections -Decrypt
-}else{
-    # Encrypt
-    Set-Encryption -site $Site -Sections $Sections 
-}
-
+Set-Encryption -site $Site -Sections $Sections -Decrypt $Decrypt
