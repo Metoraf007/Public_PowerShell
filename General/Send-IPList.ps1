@@ -1,6 +1,9 @@
-﻿$CSV = import-csv -Path D:\temp\ip.csv
+# Use in case of Windows Server 2008
+$CSV = Import-Csv -Path 'C:\temp\ipList.csv'
+$ExportFile = 'C:\temp\Network.csv'
+$AddressPatten = '192.168.'
 
-foreach ($ip in $csv) {
+foreach ($ip in $CSV) {
 
         $ping = Test-Connection -ComputerName $ip.ipaddress -Count 1 -Quiet
         if ($ping -eq $true) {
@@ -11,7 +14,7 @@ foreach ($ip in $csv) {
         }else {
             $ip.ping = $False
 
-            $arpIPs = arp -a | Select-String -Pattern 192.168. | % {$_.tostring().trim().Split(" ")[0]}
+            $arpIPs = arp -a | Select-String -Pattern $AddressPatten | Where-Object {$_.tostring().trim().Split(" ")[0]}
 
             if ($arpIPs.Contains($ip.ipaddress)) {
                 
@@ -23,6 +26,7 @@ foreach ($ip in $csv) {
                 $ip.Clear = $True
              }
          }
-         $ip | export-csv -Path d:\temp\178.csv -Append -NoTypeInformation -force
+         $ip | export-csv -Path $ExportFile -Append -NoTypeInformation -force
 }
-Send-MailMessage -Attachments d:\temp\178.csv -SmtpServer 192.168.180.88 -from Automation@cio.gov.il -to hosting@cio.gov.il -Subject "178 Network"
+
+Send-MailMessage -Attachments $ExportFile -SmtpServer 'SMTP.SERVER.COM' -from 'from@Mail.com' -to 'ToMail@Mail.com' -Subject "Network"
